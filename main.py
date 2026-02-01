@@ -37,7 +37,7 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 
-def myStyle():
+def myStyle(log_queue):
     @client.event
     async def on_ready():
         global RAW_CH
