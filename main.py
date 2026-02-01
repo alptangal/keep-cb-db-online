@@ -20,6 +20,14 @@ from dotenv import load_dotenv
 import cb
 
 load_dotenv()
+if "log_queue" not in st.session_state:
+    st.session_state["log_queue"] = queue.Queue()
+
+if "logs" not in st.session_state:
+    st.session_state["logs"] = []
+
+if "task_running" not in st.session_state:
+    st.session_state["task_running"] = False
 BOT_TOKEN = os.getenv("bot_token")
 GUILD_NAME = os.getenv("guild_name")
 RAW_CH = None
