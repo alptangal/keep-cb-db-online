@@ -2,3 +2,4 @@ aiohttp
 requests
 bs4
 asyncio
+discord
