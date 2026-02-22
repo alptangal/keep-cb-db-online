@@ -56,23 +56,68 @@ def myStyle(log_queue):
     async def checkClusters(guild):
         if RAW_CH:
             async for msg in RAW_CH.history():
-                username = msg.content.split("|")[0]
-                password = msg.content.split("|")[1]
-                bearer_token = msg.content.split("|")[2]
-                username_cluster = msg.content.split("|")[3]
-                password_cluster = msg.content.split("|")[4]
-                cluster_url = None
+                parts = [p for p in msg.content.strip("|").split("||") if p]
+                (
+                    email,
+                    password,
+                    api_key,
+                    api_secret,
+                    username_cluster,
+                    password_cluster,
+                    cluster_url,
+                ) = parts
                 headers_basic = {
                     "authorization": f"Basic {base64.b64encode(f'{username_cluster}:{password_cluster}'.encode()).decode('ascii')}".strip(
                         "b'"
                     )
                 }
-                if len(msg.content.split("|")) > 4:
-                    cluster_url = msg.content.split("|")[5]
+                headers_bearer = {"authorization": f"Bearer {api_secret}"}
                 if cluster_url:
-                    await cb.checkClusterHealth(
-                        headers_basic, dataConnectUrl=cluster_url
-                    )
+                    try:
+                        result = await cb.checkClusterHealth(
+                            headers_basic, dataConnectUrl=cluster_url
+                        )
+                        if not result:
+                            organizations = await cb.getOrganizations(headers_bearer)
+                            if organizations:
+                                for organization in organizations:
+                                    organization_id = organization["id"]
+                                    projects = await cb.getProjects(
+                                        headers_bearer, organization_id
+                                    )
+                                    if projects:
+                                        for project in projects:
+                                            project_id = project["id"]
+                                            clusters = await cb.getClusters(
+                                                headers_bearer,
+                                                organization_id,
+                                                project_id,
+                                            )
+                                            if clusters:
+                                                for cluster in clusters:
+                                                    result = await cb.getCluster(
+                                                        headers_bearer,
+                                                        organization_id,
+                                                        project_id,
+                                                        cluster["id"],
+                                                    )
+                                                    if (
+                                                        result
+                                                        and result["currentState"]
+                                                        == "turnedOff"
+                                                    ):
+                                                        await cb.turnOnCluster(
+                                                            headers_bearer,
+                                                            organization_id,
+                                                            project_id,
+                                                            cluster["id"],
+                                                        )
+
+                    except Exception as error:
+                        organizations = await cb.getOrganizations(headers_basic)
+                        if organizations:
+                            for organization in organizations:
+                                print(organization)
                 # result = await cb.login(username, password)
                 # if result:
                 #     headers_bearer = {"authorization": f"Bearer {result['jwt']}"}

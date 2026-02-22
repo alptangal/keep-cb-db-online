@@ -41,7 +41,7 @@ async def getOrganizations(headers):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{BASE_URL}v2/organizations", headers=headers
+                f"{BASE_URL}organizations", headers=headers
             ) as response:
                 if response.status < 400:
                     jsonData = await response.json()
@@ -53,11 +53,11 @@ async def getOrganizations(headers):
         return None
 
 
-async def getClusters(headers, organizationId):
+async def getClusters(headers, organizationId, projectId):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{BASE_URL}v2/organizations/{organizationId}/clusters?perPage=100&page=1&sortBy=name&sortDirection=desc",
+                f"{BASE_URL}organizations/{organizationId}/projects/{projectId}/clusters",
                 headers=headers,
             ) as response:
                 if response.status < 400:
@@ -70,11 +70,29 @@ async def getClusters(headers, organizationId):
         return None
 
 
+async def getCluster(headers, organizationId, projectId, clusterId):
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{BASE_URL}organizations/{organizationId}/projects/{projectId}/clusters/{clusterId}",
+                headers=headers,
+            ) as response:
+                if response.status < 400:
+                    jsonData = await response.json()
+                    return jsonData
+                    if jsonData and "data" in jsonData:
+                        return jsonData["data"]
+                return None
+    except Exception as e:
+        print(f"getClusters has an error occurred: {e}")
+        return None
+
+
 async def getProjects(headers, organizationId):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f"{BASE_URL}v2/organizations/{organizationId}/projects?perPage=100&page=1",
+                f"{BASE_URL}organizations/{organizationId}/projects?perPage=100&page=1",
                 headers=headers,
             ) as response:
                 if response.status < 400:
@@ -90,9 +108,9 @@ async def getProjects(headers, organizationId):
 async def turnOnCluster(headers, organizationId, projectId, clusterId):
     try:
         async with aiohttp.ClientSession() as session:
-            payload = {"turnOnAppService": True}
+            payload = {"turnOnLinkedAppService": True}
             async with session.post(
-                f"{BASE_URL}v2/organizations/{organizationId}/projects/{projectId}/clusters/{clusterId}/on",
+                f"{BASE_URL}organizations/{organizationId}/projects/{projectId}/clusters/{clusterId}/activationState",
                 headers=headers,
                 json=payload,
             ) as response:
